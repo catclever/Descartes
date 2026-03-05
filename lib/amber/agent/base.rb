@@ -1,6 +1,6 @@
 require 'ruby_llm'
 require 'logger'
-require_relative '../tools/submit_output'
+require_relative '../tools/submit_job_output_tool'
 
 module Amber
   module Agent

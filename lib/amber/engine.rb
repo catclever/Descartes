@@ -19,6 +19,14 @@ module Amber
       @agents = {}
       @logger = Logger.new($stdout)
       @logger.level = Logger::INFO
+      
+      # We instantiate a lightweight zero-temperature LLM just for Engine condition evaluations
+      # It defaults to the 'openai' profile, expecting an llm.yml at the root.
+      @engine_evaluator = RubyLlm::LLMService.new(
+        profile_name: 'openai', 
+        temperature: 0.1, 
+        logger: @logger
+      )
     end
 
     # DSL: Initialize the starting state of context
@@ -96,8 +104,39 @@ module Amber
       return false unless formal_met
 
       # 2. Check Semantic (AI) dependencies against context
-      # TODO: Call ruby_llm to evaluate the context snapshot against the job.ai_dependencies array.
+      ai_met = job.ai_dependencies.all? do |ai_requirement|
+        evaluate_condition_via_llm?(ai_requirement)
+      end
+      return false unless ai_met
+
       true
+    end
+
+    def evaluate_condition_via_llm?(requirement)
+      @logger.debug "[Amber] AI evaluating dependency: '#{requirement}'"
+      
+      prompt = <<~PROMPT
+        You are a binary logic evaluator for a State Machine Context.
+        Analyze the following Shared Context data and determine if the required condition is met.
+        
+        Shared Context:
+        #{@context.snapshot.to_json}
+        
+        Condition:
+        "#{requirement}"
+        
+        Respond with ONLY exactly 'true' or 'false', with no punctation, reasoning, or markdown.
+      PROMPT
+
+      response = @engine_evaluator.call(prompt)
+      result = response.content.to_s.strip.downcase
+
+      @logger.info "[Amber] AI Evaluated '#{requirement}': #{result}"
+      
+      result == 'true'
+    rescue StandardError => e
+      @logger.error "[Amber] Failed to evaluate AI condition '#{requirement}': #{e.message}"
+      false
     end
   end
 end

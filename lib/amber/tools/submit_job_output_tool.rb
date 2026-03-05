@@ -1,4 +1,4 @@
-require_relative 'base'
+require_relative 'base_tool'
 
 module Amber
   module Tool
