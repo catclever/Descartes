@@ -10,9 +10,11 @@ engine = Amber::Engine.build do
   # 2. Define an Agent with an LLM profile
   agent :analyzer, profile_name: 'openai', system_prompt: "You are a String analysis AI."
 
-  # 3. Define the jobs and workflow
   job :request_analysis do
     action "Pass the user's string to the Agent to analyze and reverse it."
+    
+    # Needs to ensure the prompt is loaded into memory
+    depends_on { |ctx| ctx.get(:prompt) != nil }
     
     # Assign predefined agent execution
     executed_by_agent :analyzer

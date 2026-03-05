@@ -62,12 +62,11 @@ module Amber
       loop do
         pending_jobs = @jobs.values.select { |j| j.status == :pending }
         running_jobs = @jobs.values.select { |j| j.status == :running }
-        completed_jobs = @jobs.values.select { |j| %i[completed failed].include?(j.status) }
 
         break if pending_jobs.empty? && running_jobs.empty?
 
         ready_jobs = pending_jobs.select do |j|
-          dependencies_met?(j, completed_jobs)
+          dependencies_met?(j)
         end
 
         if ready_jobs.empty? && running_jobs.empty?
@@ -89,12 +88,15 @@ module Amber
 
     private
 
-    def dependencies_met?(job, completed_jobs)
-      formal_met = job.formal_dependencies.all? do |dep_name|
-        completed_jobs.any? { |cj| cj.name == dep_name && cj.status == :completed }
+    def dependencies_met?(job)
+      # 1. Check formal logic dependencies evaluating against context
+      formal_met = job.dependencies.all? do |condition_block|
+        condition_block.call(@context)
       end
       return false unless formal_met
 
+      # 2. Check Semantic (AI) dependencies against context
+      # TODO: Call ruby_llm to evaluate the context snapshot against the job.ai_dependencies array.
       true
     end
   end

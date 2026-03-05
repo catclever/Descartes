@@ -1,13 +1,13 @@
 module Amber
   module Orchestration
     class Job
-      attr_reader :name, :description, :formal_dependencies, :ai_dependencies, :status, :result
+      attr_reader :name, :description, :dependencies, :ai_dependencies, :status, :result
 
       # status can be :pending, :running, :completed, :failed
       def initialize(name)
         @name = name.to_sym
         @description = "Dynamic Job: #{@name}"
-        @formal_dependencies = []
+        @dependencies = [] # Array of procs evaluating context
         @ai_dependencies = []
         @status = :pending
         @result = nil
@@ -19,9 +19,11 @@ module Amber
         @description = desc
       end
 
-      # DSL: Formal dependency (must wait for these jobs to turn :completed)
-      def depends_on(*job_names)
-        @formal_dependencies.concat(job_names.map(&:to_sym))
+      # DSL: Formal dependency (evaluates a block against the context)
+      # e.g. depends_on { |ctx| ctx.get(:user_id) != nil }
+      def depends_on(&block)
+        raise ArgumentError, "depends_on requires a block to evaluate context" unless block_given?
+        @dependencies << block
       end
 
       # DSL: Semantic/AI dependency rules to evaluate against Context
