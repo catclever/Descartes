@@ -1,8 +1,7 @@
-# frozen_string_literal: true
-
 require_relative "amber/version"
+require_relative "amber/engine"
 
 module Amber
   class Error < StandardError; end
-  # Your code goes here...
+  # The core module exposing Engine.build for DSL
 end
