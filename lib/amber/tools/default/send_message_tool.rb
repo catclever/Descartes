@@ -1,10 +1,11 @@
-require_relative 'base_tool'
+require_relative '../base_tool'
 
 module Amber
   module Tool
-    class SubmitOutput < Base
-      name 'submit_job_output'
+    class SendMessage < Base
+      name 'send_message'
       description 'Submit the final answer, result, or conclusion of the current job to the shared context.'
+      yields_control true
       parameters(
         type: 'object',
         properties: {

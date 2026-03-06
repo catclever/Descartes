@@ -35,6 +35,8 @@ class GitShellTool < Amber::Tool::Base
   end
 end
 
+# Reindex the tool registry to pick up our custom script-level tool
+Amber::ToolRegistry.reindex!
 
 # --- 2. Build the Amber Engine ---
 engine = Amber::Engine.build do
@@ -48,7 +50,7 @@ engine = Amber::Engine.build do
   agent :scout, 
         profile_name: 'glm2',
         system_prompt: "You are a Git Repo Scout. You execute code to look at the repo's files.",
-        tools: [GitShellTool]
+        tools: [:run_shell_in_git_repo]
 
   # 3. Trigger Auto-Orchestration!
   # This single line auto-generates a Planner Agent inside the Engine.

@@ -1,10 +1,10 @@
-require_relative 'base_tool'
+require_relative '../base_tool'
 
 module Amber
   module Tool
     class SpawnJob < Base
       name 'spawn_job'
-      description 'Dynamically spawn a new executing Job into the Amber State Machine Engine to handle a specific sub-task.'
+      description "Dynamically spawn a new executing Job into the Amber State Machine Engine to handle a specific sub-task. If you are the Planner, use this tool to create multiple jobs, and then YOU MUST call 'send_message' to yield control so the engine can run your spawned jobs."
       parameters(
         type: 'object',
         properties: {
@@ -27,7 +27,7 @@ module Amber
         queue << new_job_definition
         @context.set(:__amber_dynamic_jobs, queue)
         
-        "Successfully scheduled job :#{args['job_name']} in the Engine."
+        "Successfully scheduled job :#{args['job_name']} in the Engine. If you are done planning, YOU MUST call 'send_message' now to yield control."
       end
     end
   end

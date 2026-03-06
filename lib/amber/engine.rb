@@ -1,11 +1,15 @@
 require_relative 'context'
 require_relative 'orchestration/job'
 require_relative 'agent/base'
-require_relative 'tools/spawn_job_tool'
+require_relative 'engine/planner'
+require_relative 'engine/evaluator'
 require 'logger'
 
 module Amber
   class Engine
+    include Planner
+    include Evaluator
+
     attr_reader :context, :jobs
 
     def self.build(&block)
@@ -40,18 +44,7 @@ module Amber
       @agents[name.to_sym] = Agent::Base.new(name: name, logger: @logger, **kwargs)
     end
 
-    # DSL (Macro): Automatically orchestrate and plan sub-jobs from a single Goal string!
-    def orchestrate(goal)
-      agent :__amber_planner, 
-            profile_name: @engine_evaluator.instance_variable_get(:@format_name) == 'anthropic' ? 'glm2' : 'openai', 
-            system_prompt: "You are an intelligent auto-planner. Break down the GOAL into execution steps using your `spawn_job` tool. Once you've spawned all jobs, submit 'Planning Complete' to the context key :planning_status.",
-            tools: [Amber::Tool::SpawnJob]
-            
-      job :__amber_root_plan do
-        action "Goal: #{goal}"
-        executed_by_agent :__amber_planner
-      end
-    end
+
 
     # DSL: Define a job
     def job(name, &block)
@@ -126,11 +119,13 @@ module Amber
         
         j.depends_on_ai(job_spec[:condition]) if job_spec[:condition] && !job_spec[:condition].empty?
         
-        # If no explicit agent is defined, we'll auto-execute with the first generic execution agent available,
-        # or error out if none. We can default to any agent that has CodeExecutor tools!
-        valid_agents = @agents.keys.reject { |k| k == :__amber_planner }
+        # If no explicit agent is defined, auto-execute with the first generic execution agent available
+        valid_agents = @agents.reject { |k, _v| k == :__amber_planner }.values
         if valid_agents.any?
-          j.instance_variable_set(:@agent_name, valid_agents.first)
+          agent_instance = valid_agents.first
+          j.executed_by do |ctx|
+            agent_instance.execute(ctx, j.description)
+          end
         end
         
         @jobs[job_sym] = j
@@ -139,47 +134,6 @@ module Amber
       @context.set(:__amber_dynamic_jobs, [])
     end
 
-    def dependencies_met?(job)
-      # 1. Check formal logic dependencies evaluating against context
-      formal_met = job.dependencies.all? do |condition_block|
-        condition_block.call(@context)
-      end
-      return false unless formal_met
 
-      # 2. Check Semantic (AI) dependencies against context
-      ai_met = job.ai_dependencies.all? do |ai_requirement|
-        evaluate_condition_via_llm?(ai_requirement)
-      end
-      return false unless ai_met
-
-      true
-    end
-
-    def evaluate_condition_via_llm?(requirement)
-      @logger.debug "[Amber] AI evaluating dependency: '#{requirement}'"
-      
-      prompt = <<~PROMPT
-        You are a binary logic evaluator for a State Machine Context.
-        Analyze the following Shared Context data and determine if the required condition is met.
-        
-        Shared Context:
-        #{@context.snapshot.to_json}
-        
-        Condition:
-        "#{requirement}"
-        
-        Respond with ONLY exactly 'true' or 'false', with no punctation, reasoning, or markdown.
-      PROMPT
-
-      response = @engine_evaluator.call(prompt)
-      result = response.content.to_s.strip.downcase
-
-      @logger.info "[Amber] AI Evaluated '#{requirement}': #{result}"
-      
-      result == 'true'
-    rescue StandardError => e
-      @logger.error "[Amber] Failed to evaluate AI condition '#{requirement}': #{e.message}"
-      false
-    end
   end
 end

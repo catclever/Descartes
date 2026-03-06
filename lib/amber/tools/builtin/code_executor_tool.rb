@@ -1,5 +1,5 @@
-require_relative 'base_tool'
-require_relative '../sandbox/executor'
+require_relative '../base_tool'
+require_relative '../../sandbox/executor'
 
 module Amber
   module Tool

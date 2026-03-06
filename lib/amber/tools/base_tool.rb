@@ -12,6 +12,14 @@ module Amber
           @tool_description = desc
         end
 
+        def yields_control(value = true)
+          @yields_control = value
+        end
+
+        def yields_control?
+          @yields_control || false
+        end
+
         # Define JSON Schema parameters
         def parameters(hash)
           @tool_parameters = hash
@@ -31,10 +39,11 @@ module Amber
       end
 
       # Execution environment injected by Agent
-      attr_accessor :context, :working_directory
+      attr_accessor :context, :working_note, :working_directory
 
-      def initialize(context)
+      def initialize(context, working_note = nil)
         @context = context
+        @working_note = working_note
       end
 
       # Override this in subclasses
