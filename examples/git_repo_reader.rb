@@ -1,7 +1,7 @@
-require_relative '../lib/amber'
+require_relative '../lib/descartes'
 
 # ======================================================================
-# Advanced Amber Example: Auto-Analyzing a Git Repository (Optimized DSL)
+# Advanced Descartes Example: Auto-Analyzing a Git Repository (Optimized DSL)
 # This example demonstrates:
 # 1. Defining complex generic Tools (with varying Sandbox limits)
 # 2. Defining generic Worker Agents
@@ -10,7 +10,7 @@ require_relative '../lib/amber'
 # ======================================================================
 
 # --- 1. Define Tools with Configurable Sandbox Arguments ---
-class GitShellTool < Amber::Tool::Base
+class GitShellTool < Descartes::Tool::Base
   name 'run_shell_in_git_repo'
   description 'Execute bash-like Ruby system commands to explore the repo (e.g. Dir.glob, File.read)'
   
@@ -24,7 +24,7 @@ class GitShellTool < Amber::Tool::Base
 
   def execute(args)
     # Give the executor aggressive boundaries since we are just reading files
-    executor = Amber::Sandbox::Executor.new(memory_limit_mb: 100, cpu_limit_sec: 5)
+    executor = Descartes::Sandbox::Executor.new(memory_limit_mb: 100, cpu_limit_sec: 5)
     
     begin
       result = executor.execute(args['ruby_code'])
@@ -36,13 +36,13 @@ class GitShellTool < Amber::Tool::Base
 end
 
 # Reindex the tool registry to pick up our custom script-level tool
-Amber::ToolRegistry.reindex!
+Descartes::ToolRegistry.reindex!
 
-# --- 2. Build the Amber Engine ---
-engine = Amber::Engine.build do
+# --- 2. Build the Descartes Engine ---
+engine = Descartes::Engine.build do
   
   # 1. State/Context Definition
-  environment target_repo: '/Users/kael/workbench/ruby_lab/amber'
+  environment target_repo: '/Users/kael/workbench/ruby_lab/descartes'
 
   # 2. Define our standard Worker pool
   # We don't even need to assign them to Jobs! The Engine will grab any Agent

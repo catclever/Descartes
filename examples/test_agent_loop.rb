@@ -1,8 +1,8 @@
-require_relative '../lib/amber'
+require_relative '../lib/descartes'
 
-puts "Building Amber Agent Body & Soul DSL..."
+puts "Building Descartes Agent Body & Soul DSL..."
 
-body = Amber::Body.define :analyzer_squad do
+body = Descartes::Body.define :analyzer_squad do
   config do
     profile :glm, provider: :glm, model: 'glm-5'
   end
@@ -12,7 +12,7 @@ body = Amber::Body.define :analyzer_squad do
   end
 end
 
-soul = Amber::Soul.define :string_analysis do
+soul = Descartes::Soul.define :string_analysis do
   inject_context prompt: "Can you analyze this string 'Hello World' and reverse it?"
 
   job :request_analysis do
@@ -26,6 +26,6 @@ soul = Amber::Soul.define :string_analysis do
   end
 end
 
-puts "\nExecuting Amber Body..."
+puts "\nExecuting Descartes Body..."
 body.animate(soul)
 puts "\nDone!"

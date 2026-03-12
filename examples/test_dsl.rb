@@ -1,16 +1,16 @@
-require_relative '../lib/amber'
+require_relative '../lib/descartes'
 
-puts "Building Amber Body & Soul DSL..."
+puts "Building Descartes Body & Soul DSL..."
 
 # 1. Define the reusable Body
-body = Amber::Body.define :basic_runner do
+body = Descartes::Body.define :basic_runner do
   config do
     profile :default, provider: :openai, model: 'gpt-4o-mini'
   end
 end
 
 # 2. Define the specific Soul (Workflow + Context)
-soul = Amber::Soul.define :parsing_flow do
+soul = Descartes::Soul.define :parsing_flow do
   inject_context user_id: 123, status: 'started'
 
   job :parse_input do
@@ -39,6 +39,6 @@ soul = Amber::Soul.define :parsing_flow do
   end
 end
 
-puts "\nExecuting Amber Body.animate..."
+puts "\nExecuting Descartes Body.animate..."
 body.animate(soul)
 puts "\nDone!"

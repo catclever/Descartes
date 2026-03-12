@@ -1,7 +1,7 @@
-require_relative '../lib/amber'
+require_relative '../lib/descartes'
 
 # --- 1. Define a Custom Tool ---
-class WeatherLookupTool < Amber::Tool::Base
+class WeatherLookupTool < Descartes::Tool::Base
   name 'get_current_weather'
   description 'Lookup the current weather for a given city.'
   parameters(
@@ -23,10 +23,10 @@ class WeatherLookupTool < Amber::Tool::Base
 end
 
 
-# --- 2. Build the Amber Body & Soul DSL ---
-puts "Building Amber Agent DSL..."
+# --- 2. Build the Descartes Body & Soul DSL ---
+puts "Building Descartes Agent DSL..."
 
-body = Amber::Body.define :weather_agency do
+body = Descartes::Body.define :weather_agency do
   config do
     profile :glm, provider: :glm, model: 'glm-5', tags: [:default, :planner]
   end
@@ -40,7 +40,7 @@ body = Amber::Body.define :weather_agency do
   end
 end
 
-soul = Amber::Soul.define :check_weather_flow do
+soul = Descartes::Soul.define :check_weather_flow do
   # Shared Context
   inject_context user_query: "What's the weather like in Tokyo today?",
                  weather_result: nil
@@ -68,6 +68,6 @@ soul = Amber::Soul.define :check_weather_flow do
 end
 
 # --- 3. Execute ---
-puts "\nExecuting Amber Body Integration Test..."
+puts "\nExecuting Descartes Body Integration Test..."
 body.animate(soul)
 puts "\nDone!"
