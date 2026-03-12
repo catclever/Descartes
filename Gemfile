@@ -2,7 +2,7 @@
 
 source "https://rubygems.org"
 
-# Specify your gem's dependencies in amber.gemspec
+# Specify your gem's dependencies in descartes.gemspec
 gemspec
 
 gem 'ruby_llm', path: '../ruby_llm'
