@@ -1,10 +1,12 @@
-require_relative '../lib/descartes'
+# frozen_string_literal: true
+
+require_relative "../lib/descartes"
 
 puts "Building Descartes Agent Body & Soul DSL..."
 
 body = Descartes::Body.define :analyzer_squad do
   config do
-    profile :glm, provider: :glm, model: 'glm-5'
+    profile :glm, provider: :glm, model: "glm-5"
   end
 
   roster do
@@ -17,10 +19,10 @@ soul = Descartes::Soul.define :string_analysis do
 
   job :request_analysis do
     description "Pass the user's string to the Agent to analyze and reverse it."
-    
+
     # Needs to ensure the prompt is loaded into memory
-    depends_on { |ctx| ctx.get(:prompt) != nil }
-    
+    depends_on { |ctx| !ctx.get(:prompt).nil? }
+
     # Assign predefined agent execution
     assignee :analyzer
   end

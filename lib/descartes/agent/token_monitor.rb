@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Descartes
   module Agent
     class TokenMonitor
@@ -12,7 +14,7 @@ module Descartes
         # Convert to JSON to approximate the raw text string size sent to LLM
         text = messages.to_json
         byte_len = text.bytesize
-        
+
         # Calculate tokens with safety margin
         base_tokens = (byte_len + APPROX_BYTES_PER_TOKEN - 1) / APPROX_BYTES_PER_TOKEN
         (base_tokens * SAFETY_MARGIN).to_i

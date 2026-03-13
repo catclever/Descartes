@@ -1,5 +1,8 @@
-require 'tmpdir'
-require 'timeout'
+# frozen_string_literal: true
+
+require "English"
+require "tmpdir"
+require "timeout"
 
 module Descartes
   module Sandbox
@@ -37,13 +40,11 @@ module Descartes
       def check_node(node)
         return unless node.is_a?(RubyVM::AbstractSyntaxTree::Node)
 
-        if node.type == :FCALL || node.type == :VCALL || node.type == :CALL
+        if %i[FCALL VCALL CALL].include?(node.type)
           # For CALL nodes, the method name is typically the second object
           method_name = node.type == :CALL ? node.children[1] : node.children[0]
-          
-          if FORBIDDEN_METHODS.include?(method_name)
-            raise SecurityError, "Forbidden method call detected: #{method_name}"
-          end
+
+          raise SecurityError, "Forbidden method call detected: #{method_name}" if FORBIDDEN_METHODS.include?(method_name)
         elsif node.type == :XSTR # Backticks `ls`
           raise SecurityError, "Backtick (system command) execution is forbidden."
         end
@@ -58,13 +59,13 @@ module Descartes
 
         pid = Process.fork do
           reader.close
-          
+
           begin
             # Apply resource limits
             if Process.respond_to?(:setrlimit)
               # CPU limits in seconds
               Process.setrlimit(Process::RLIMIT_CPU, @cpu_limit_sec)
-              
+
               # Memory limit in bytes (Address space)
               begin
                 Process.setrlimit(Process::RLIMIT_AS, @memory_limit_mb * 1024 * 1024)
@@ -72,15 +73,15 @@ module Descartes
                 # skip if not supported or fails on OS
               end
             end
-            
+
             # Wipe environment variables to prevent token leakage
             ENV.clear
-            
+
             # Change to isolated tmp workspace
             Dir.chdir(workspace_dir)
-            
+
             result = eval(code, binding, "descartes_sandbox", 1)
-            
+
             payload = Marshal.dump({ status: :success, result: result })
             writer.write(payload)
           rescue Exception => e
@@ -93,13 +94,13 @@ module Descartes
         end
 
         writer.close
-        
+
         begin
           Timeout.timeout(@cpu_limit_sec + 2) do
             Process.wait(pid)
           end
         rescue Timeout::Error
-          Process.kill('KILL', pid)
+          Process.kill("KILL", pid)
           Process.wait(pid)
           raise TimeoutError, "Sandbox execution timed out after #{@cpu_limit_sec} seconds."
         end
@@ -107,22 +108,21 @@ module Descartes
         output = reader.read
         reader.close
 
-        if $?.exited? && $?.exitstatus == 0
+        if $CHILD_STATUS.exited? && $CHILD_STATUS.exitstatus.zero?
           return nil if output.empty?
-          
+
           # Safely load the payload
           data = Marshal.load(output)
-          if data[:status] == :success
-            data[:result]
-          else
-            raise ExecutionError, "#{data[:class]}: #{data[:message]}\n" + Array(data[:backtrace]).join("\n")
-          end
+          raise ExecutionError, "#{data[:class]}: #{data[:message]}\n" + Array(data[:backtrace]).join("\n") unless data[:status] == :success
+
+          data[:result]
+
         else
-          if $?.termsig == 24 || $?.termsig == 9
-            raise TimeoutError, "Sandbox execution timed out (CPU limit exceeded)."
-          else
-            raise ExecutionError, "Subprocess crashed or was killed by signal: #{$?.termsig}"
-          end
+          raise TimeoutError, "Sandbox execution timed out (CPU limit exceeded)." if [24,
+                                                                                      9].include?($CHILD_STATUS.termsig)
+
+          raise ExecutionError, "Subprocess crashed or was killed by signal: #{$CHILD_STATUS.termsig}"
+
         end
       end
     end

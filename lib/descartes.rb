@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require_relative "descartes/version"
 require_relative "descartes/body"
 require_relative "descartes/soul"

@@ -1,4 +1,6 @@
-require_relative '../lib/descartes/sandbox/executor'
+# frozen_string_literal: true
+
+require_relative "../lib/descartes/sandbox/executor"
 
 puts "Testing Descartes Sandbox..."
 executor = Descartes::Sandbox::Executor.new(cpu_limit_sec: 2)
@@ -51,6 +53,6 @@ end
 # Test 6: Workspace Isolation Check
 puts "\n[Test 6] Workspace Checking"
 result = executor.execute("Dir.pwd")
-puts "Result is workspace: #{result.include?('descartes_workspace')}"
+puts "Result is workspace: #{result.include?("descartes_workspace")}"
 
 puts "\nDone!"

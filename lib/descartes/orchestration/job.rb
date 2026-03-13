@@ -1,8 +1,10 @@
+# frozen_string_literal: true
+
 module Descartes
   module Orchestration
     class Job
-      attr_reader :name, :description, :dependencies, :ai_dependencies, :status, :result
-      attr_reader :execution_agent, :max_turns, :execution_block
+      attr_reader :name, :description, :dependencies, :ai_dependencies, :status, :result, :execution_agent, :max_turns,
+                  :execution_block
 
       # status can be :pending, :running, :completed, :failed
       def initialize(name)
@@ -12,7 +14,7 @@ module Descartes
         @ai_dependencies = []
         @status = :pending
         @result = nil
-        
+
         @execution_agent = nil
         @execution_block = nil
         @max_turns = nil
@@ -21,15 +23,14 @@ module Descartes
       # DSL: action description or Getter
       def description(desc = nil)
         return @description if desc.nil?
+
         @description = desc
       end
 
       # e.g. depends_on { |ctx| ctx.get(:user_id) != nil }
       # or depends_on :some_other_job
       def depends_on(*job_names, &block)
-        if block_given?
-          @dependencies << block
-        end
+        @dependencies << block if block_given?
         job_names.each do |job_name|
           @dependencies << ->(ctx) { ctx.get(:__descartes_job_status, job_name) == :completed }
         end
@@ -48,15 +49,14 @@ module Descartes
       # DSL: Assign pure Ruby block
       def execute(&block)
         raise ArgumentError, "Cannot define both execute and assignee for a single Job." if @execution_agent
+
         @execution_block = block
       end
-      
+
       def execute_ruby!(ctx)
         @status = :running
         begin
-          if @execution_block
-            @result = @execution_block.call(ctx)
-          end
+          @result = @execution_block.call(ctx) if @execution_block
           @status = :completed
         rescue StandardError => e
           @result = e

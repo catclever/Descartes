@@ -1,5 +1,7 @@
-require_relative 'context'
-require_relative 'orchestration/job'
+# frozen_string_literal: true
+
+require_relative "context"
+require_relative "orchestration/job"
 
 module Descartes
   class Soul
@@ -26,9 +28,9 @@ module Descartes
     # DSL: Define the overarching ultimate goal for the Planner, or get it
     def objective(text = nil)
       return @objective if text.nil?
-      
+
       @objective = text
-      
+
       # Defining an objective automatically creates an implicit Root Job for the Planner
       j = Orchestration::Job.new(:__descartes_root_plan)
       j.description("Goal: #{text}")
