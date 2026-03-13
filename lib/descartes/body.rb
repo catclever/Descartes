@@ -50,19 +50,17 @@ module Descartes
     def agent(name, **kwargs)
       profile_name = kwargs.delete(:profile) || :default
       
-      # If the body has a defined profile hash for this, we extract args,
-      # but RubyLlm::Profile actually loads from llm.yml via `profile_name`. 
-      # The :profile argument in the DSL maps to the ruby_llm profile name, 
-      # unless the user mapped a custom tag in `config`.
-      
       # Find mapping in profiles
-      mapped_profile = @profiles[profile_name]
-      actual_ruby_llm_profile = mapped_profile ? mapped_profile[:provider] || profile_name : profile_name
+      mapped_profile = @profiles[profile_name] || {}
+      actual_ruby_llm_profile = mapped_profile[:provider] || profile_name
+      
+      timeout_val = kwargs.delete(:timeout) || mapped_profile[:timeout]
       
       @agents[name.to_sym] = Agent::Base.new(
         name: name, 
         logger: @logger, 
         profile_name: actual_ruby_llm_profile,
+        timeout: timeout_val,
         **kwargs
       )
     end
