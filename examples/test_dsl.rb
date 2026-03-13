@@ -1,17 +1,19 @@
-require_relative '../lib/descartes'
+# frozen_string_literal: true
+
+require_relative "../lib/descartes"
 
 puts "Building Descartes Body & Soul DSL..."
 
 # 1. Define the reusable Body
 body = Descartes::Body.define :basic_runner do
   config do
-    profile :default, provider: :openai, model: 'gpt-4o-mini'
+    profile :default, provider: :openai, model: "gpt-4o-mini"
   end
 end
 
 # 2. Define the specific Soul (Workflow + Context)
 soul = Descartes::Soul.define :parsing_flow do
-  inject_context user_id: 123, status: 'started'
+  inject_context user_id: 123, status: "started"
 
   job :parse_input do
     description "Read input from user"
@@ -24,7 +26,7 @@ soul = Descartes::Soul.define :parsing_flow do
 
   job :generate_response do
     depends_on :parse_input
-    
+
     description "Generate AI response based on input"
     execute do |ctx|
       puts "--> [Job: generate_response] Running! Input Received flag is: #{ctx.get(:input_received)}"

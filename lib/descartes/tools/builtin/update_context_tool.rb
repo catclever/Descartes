@@ -1,10 +1,12 @@
-require_relative '../base_tool'
+# frozen_string_literal: true
+
+require_relative "../base_tool"
 
 module Descartes
   module Tool
     class UpdateContext < Base
       def self.tool_name
-        'update_context'
+        "update_context"
       end
 
       def self.description
@@ -24,18 +26,18 @@ module Descartes
               description: "The string value or JSON string to store."
             }
           },
-          required: ["key", "value"]
+          required: %w[key value]
         }
       end
 
       def execute(args, context = nil)
         raise ArgumentError, "Context is required for update_context tool" unless context
-        
-        key = args['key'].to_sym
-        value = args['value']
-        
+
+        key = args["key"].to_sym
+        value = args["value"]
+
         context.set(key, value)
-        
+
         "Successfully saved `#{key}` to the Persistent Context."
       rescue StandardError => e
         "Failed to update context: #{e.message}"

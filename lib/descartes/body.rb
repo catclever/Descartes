@@ -1,7 +1,9 @@
-require 'logger'
-require_relative 'agent/base'
-require_relative 'body/planner'
-require_relative 'body/evaluator'
+# frozen_string_literal: true
+
+require "logger"
+require_relative "agent/base"
+require_relative "body/planner"
+require_relative "body/evaluator"
 
 module Descartes
   class Body
@@ -22,11 +24,11 @@ module Descartes
       @profiles = {}
       @logger = Logger.new($stdout)
       @logger.level = Logger::INFO
-      
+
       # Implicit default configs for the internal components
       @engine_evaluator = RubyLlm::LLMService.new(
-        profile_name: 'glm', # fallback default for conditions
-        temperature: 0.1, 
+        profile_name: "glm", # fallback default for conditions
+        temperature: 0.1,
         logger: @logger
       )
     end
@@ -49,16 +51,16 @@ module Descartes
     # DSL: Inside roster, define an agent
     def agent(name, **kwargs)
       profile_name = kwargs.delete(:profile) || :default
-      
+
       # Find mapping in profiles
       mapped_profile = @profiles[profile_name] || {}
       actual_ruby_llm_profile = mapped_profile[:provider] || profile_name
-      
+
       timeout_val = kwargs.delete(:timeout) || mapped_profile[:timeout]
-      
+
       @agents[name.to_sym] = Agent::Base.new(
-        name: name, 
-        logger: @logger, 
+        name: name,
+        logger: @logger,
         profile_name: actual_ruby_llm_profile,
         timeout: timeout_val,
         **kwargs
@@ -68,13 +70,13 @@ module Descartes
     # Execution Endpoint: Bind a Soul to this Body and run it
     def animate(soul)
       @logger.info "[Descartes::Body::#{@name}] Animating Soul: :#{soul.name} with #{soul.jobs.size} jobs."
-      
+
       # Setup the auto planner if the objective exists
       setup_default_planner_if_missing! if soul.objective
-      
+
       # Run the core concurrent engine loop logic on the Soul's elements
       execute_loop!(soul)
-      
+
       @logger.info "[Descartes::Body::#{@name}] Animation Complete. Final Soul State: #{soul.context.snapshot.inspect}"
     end
 
@@ -82,14 +84,14 @@ module Descartes
 
     def execute_loop!(soul)
       @active_threads = []
-      
+
       loop do
         intercept_dynamic_jobs!(soul)
 
         pending_jobs = soul.jobs.values.select { |j| j.status == :pending }
         running_jobs = soul.jobs.values.select { |j| j.status == :running }
 
-        @active_threads.reject! { |t| !t.alive? }
+        @active_threads.select!(&:alive?)
 
         break if pending_jobs.empty? && running_jobs.empty? && @active_threads.empty?
 
@@ -105,47 +107,41 @@ module Descartes
         ready_jobs.each do |j|
           @logger.info "[Descartes::Body::#{@name}] Dispatching Job: :#{j.name}"
           j.instance_variable_set(:@status, :running)
-          
+
           t = Thread.new do
-            begin
-              # Pass the explicit context to the job execution
-              if j.execution_agent
-                agent_instance = @agents[j.execution_agent]
-                unless agent_instance
-                  raise StandardError, "Agent :#{j.execution_agent} not found in this Body's roster."
-                end
-                
-                # Execute AI
-                result = agent_instance.execute(soul.context, j.description, run_max_turns: j.max_turns)
-                
-                # Auto-context writing: write AI yield output to Soul Context
-                soul.context.set(j.name, result)
-              else
-                # Execute Ruby block
-                j.execute_ruby!(soul.context)
-              end
-              @logger.info "[Descartes::Body::#{@name}] Finished Job: :#{j.name}"
-            rescue StandardError => e
-              @logger.error "[Descartes::Body::#{@name}] Job :#{j.name} crashed: #{e.message}\n#{e.backtrace.join("\n")}"
-              j.instance_variable_set(:@status, :failed)
-            ensure
-              # Write job completion status to context for `depends_on`
-              statuses = soul.context.get(:__descartes_job_status) || {}
-              statuses[j.name] = j.status
-              soul.context.set(:__descartes_job_status, statuses)
+            # Pass the explicit context to the job execution
+            if j.execution_agent
+              agent_instance = @agents[j.execution_agent]
+              raise StandardError, "Agent :#{j.execution_agent} not found in this Body's roster." unless agent_instance
+
+              # Execute AI
+              result = agent_instance.execute(soul.context, j.description, run_max_turns: j.max_turns)
+
+              # Auto-context writing: write AI yield output to Soul Context
+              soul.context.set(j.name, result)
+            else
+              # Execute Ruby block
+              j.execute_ruby!(soul.context)
             end
+            @logger.info "[Descartes::Body::#{@name}] Finished Job: :#{j.name}"
+          rescue StandardError => e
+            @logger.error "[Descartes::Body::#{@name}] Job :#{j.name} crashed: #{e.message}\n#{e.backtrace.join("\n")}"
+            j.instance_variable_set(:@status, :failed)
+          ensure
+            # Write job completion status to context for `depends_on`
+            statuses = soul.context.get(:__descartes_job_status) || {}
+            statuses[j.name] = j.status
+            soul.context.set(:__descartes_job_status, statuses)
           end
-          
+
           @active_threads << t
         end
 
         sleep(0.1) unless ready_jobs.any?
       end
-      
+
       @active_threads.each(&:join)
     end
-    
-
 
     def intercept_dynamic_jobs!(soul)
       queue = soul.context.get(:__descartes_dynamic_jobs)
@@ -159,11 +155,9 @@ module Descartes
         j = Orchestration::Job.new(job_sym)
         j.instance_variable_set(:@description, job_spec[:objective])
         j.depends_on_ai(job_spec[:condition]) if job_spec[:condition] && !job_spec[:condition].empty?
-        
+
         # Pull max turns
-        if job_spec[:max_turns]
-          j.instance_variable_set(:@max_turns, job_spec[:max_turns].to_i)
-        end
+        j.instance_variable_set(:@max_turns, job_spec[:max_turns].to_i) if job_spec[:max_turns]
 
         # Assign generic agent if not specified
         assignee = job_spec[:assignee]
@@ -174,10 +168,10 @@ module Descartes
           valid_agents = @agents.reject { |k, _v| k == :__descartes_planner }.keys
           j.assignee(valid_agents.first) if valid_agents.any?
         end
-        
+
         soul.jobs[job_sym] = j
       end
-      
+
       soul.context.set(:__descartes_dynamic_jobs, [])
     end
   end

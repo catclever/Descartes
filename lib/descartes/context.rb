@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Descartes
   class Context
     attr_reader :state
