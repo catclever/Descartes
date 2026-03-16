@@ -5,7 +5,11 @@ source "https://rubygems.org"
 # Specify your gem's dependencies in descartes.gemspec
 gemspec
 
-gem "ruby_llm", path: "../ruby_llm"
+if ENV["CI"]
+  gem "ruby_llm", github: "catclever/ruby_llm"
+else
+  gem "ruby_llm", path: "../ruby_llm"
+end
 
 gem "irb"
 gem "rake", "~> 13.0"
