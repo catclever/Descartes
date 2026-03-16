@@ -11,7 +11,7 @@
 .rspec_status
 
 # llm
-llm.y
+llm.yml
 
 # Agent
 .agent/
