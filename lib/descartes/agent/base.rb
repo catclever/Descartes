@@ -91,8 +91,11 @@ module Descartes
             tools: llm_tools
           )
 
-          # Add Assistant's response to history
-          queue.add({ role: "assistant", content: response.content || "", tool_calls: response.tool_calls })
+          # Add Assistant's response to history ONLY if it actually contains text or tools.
+          # Perfectly blank hallucinations (no text, no tool) cause downstream OpenAI 400 errors.
+          if (response.content && !response.content.strip.empty?) || response.has_tool_calls?
+            queue.add({ role: "assistant", content: response.content || "", tool_calls: response.tool_calls })
+          end
 
           # If the LLM didn't call any tools, we warn it and force it to.
           unless response.has_tool_calls?
