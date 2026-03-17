@@ -37,7 +37,7 @@ module Descartes
         end
 
         # Initialize ruby_llm instance using profile name
-        @llm = RubyLlm::LLMService.new(profile_name: profile_name, timeout: timeout, logger: @logger)
+        @llm = RubyLLM::LLMService.new(profile_name: profile_name, timeout: timeout, logger: @logger)
       end
 
       # The execution loop given a job context
@@ -93,9 +93,7 @@ module Descartes
 
           # Add Assistant's response to history ONLY if it actually contains text or tools.
           # Perfectly blank hallucinations (no text, no tool) cause downstream OpenAI 400 errors.
-          if (response.content && !response.content.strip.empty?) || response.has_tool_calls?
-            queue.add({ role: "assistant", content: response.content || "", tool_calls: response.tool_calls })
-          end
+          queue.add({ role: "assistant", content: response.content || "", tool_calls: response.tool_calls }) if (response.content && !response.content.strip.empty?) || response.has_tool_calls?
 
           # If the LLM didn't call any tools, we warn it and force it to.
           unless response.has_tool_calls?

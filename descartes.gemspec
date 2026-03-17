@@ -8,8 +8,8 @@ Gem::Specification.new do |spec|
   spec.authors = ["Kael.Cai"]
   spec.email = ["saint.archangel.satan@gmail.com"]
 
-  spec.summary = "A Ruby framework for reactive SPSS agent workflows."
-  spec.description = "Descartes provides a tool and agent proxy framework to orchestrate LLM workflows over IBM SPSS."
+  spec.summary = "A Ruby framework for reactive LLM agent workflows."
+  spec.description = "Descartes provides a tool and agent proxy framework to orchestrate LLM workflows and sandbox code execution."
   spec.homepage = "https://github.com/catclever/descartes"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 3.2.0"

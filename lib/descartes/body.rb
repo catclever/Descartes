@@ -26,7 +26,7 @@ module Descartes
       @logger.level = Logger::INFO
 
       # Implicit default configs for the internal components
-      @engine_evaluator = RubyLlm::LLMService.new(
+      @engine_evaluator = RubyLLM::LLMService.new(
         profile_name: "glm", # fallback default for conditions
         temperature: 0.1,
         logger: @logger

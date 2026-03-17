@@ -1,43 +1,48 @@
 # Descartes
 
-TODO: Delete this and the text below, and describe your gem
+[![Ruby](https://img.shields.io/badge/Language-Ruby-red.svg)](https://www.ruby-lang.org/)
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/descartes`. To experiment with that code, run `bin/console` for an interactive prompt.
+**A Ruby framework for reactive LLM agent workflows.**
 
-## Installation
+Descartes provides a tool and agent proxy framework to orchestrate LLM workflows. It is designed to seamlessly orchestrate Large Language Models (LLMs) with local tools and sandbox environments, enabling autonomous agents to reason, generate code, and execute actions.
 
-TODO: Replace `UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG` with your gem name right after releasing it to RubyGems.org. Please do not do it earlier due to security reasons. Alternatively, replace this section with instructions to install your gem from git if you don't plan to release to RubyGems.org.
+---
 
-Install the gem and add to the application's Gemfile by executing:
+## 📖 Documentation / 文档
 
-```bash
-bundle add UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
+- [English Version](README.md)
+- [中文版本](README.zh-CN.md)
+
+---
+## English Version
+
+### Features
+- **Agent Orchestration**: Built-in support for deploying LLMs as reasoning engines (Souls) and executing actions (Bodies).
+- **Tool Registry**: Easily register and load customized tools that allow agents to interact with local systems and external APIs.
+- **Sandbox Execution**: Secure subprocess execution of agent-generated code with resource limits.
+- **Seamless LLM Integration**: Tightly integrated with `ruby_llm` to interact with providers like OpenAI, Anthropic, and Gemini.
+
+### Installation
+
+Add this line to your application's Gemfile:
+
+```ruby
+gem 'descartes', github: 'catclever/descartes'
 ```
 
-If bundler is not being used to manage dependencies, install the gem by executing:
-
+And then execute:
 ```bash
-gem install UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
+$ bundle install
 ```
 
-## Usage
+### Usage
 
-TODO: Write usage instructions here
+```ruby
+require 'descartes'
 
-## Development
+# Detailed usage instructions and architecture to be supplemented based on your SPSS workflows.
+```
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+### License
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and the created tag, and push the `.gem` file to [rubygems.org](https://rubygems.org).
-
-## Contributing
-
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/descartes. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/[USERNAME]/descartes/blob/main/CODE_OF_CONDUCT.md).
-
-## License
-
-The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
-
-## Code of Conduct
-
-Everyone interacting in the Descartes project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/[USERNAME]/descartes/blob/main/CODE_OF_CONDUCT.md).
+The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT). It fully supports commercial use.
