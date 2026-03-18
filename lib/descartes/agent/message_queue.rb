@@ -98,6 +98,43 @@ module Descartes
         @history
       end
 
+      # Pops the very last message from history (except system prompts)
+      def pop_last_message!
+        return nil if @history.size <= 1
+        return nil if @history.last[:role] == 'system'
+
+        popped = @history.pop
+        @logger.warn "[Descartes::MessageQueue] Context Eviction (pop_last_message): Removed last message with role '#{popped[:role]}'."
+        popped
+      end
+
+      # Pops the last contiguous block of [assistant (with tool_calls), tool]
+      def pop_last_tool_group!
+        return nil if @history.size <= 2
+
+        # Start scanning from the end
+        idx = @history.size - 1
+        
+        # We might be ending on a tool or an assistant message
+        # Let's find the outermost assistant message that has tool calls
+        target_assistant_idx = nil
+        while idx >= 0
+          msg = @history[idx]
+          if msg[:role] == 'assistant' && msg[:tool_calls] && !msg[:tool_calls].empty?
+            target_assistant_idx = idx
+            break
+          end
+          idx -= 1
+        end
+
+        return nil unless target_assistant_idx
+
+        # Remove everything from target_assistant_idx to the end
+        evicted = @history.slice!(target_assistant_idx, @history.size - target_assistant_idx)
+        @logger.warn "[Descartes::MessageQueue] Context Eviction (pop_last_tool_group): Removed #{evicted.size} messages starting from an assistant tool invocation."
+        evicted
+      end
+
       private
 
       def group_into_rounds(messages)

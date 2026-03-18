@@ -1,4 +1,9 @@
 PATH
+  remote: ../llm_json
+  specs:
+    llm_json (0.1.0)
+
+PATH
   remote: ../ruby_llm
   specs:
     ruby_llm (0.1.0)
@@ -8,6 +13,7 @@ PATH
   remote: .
   specs:
     descartes (0.1.0)
+      llm_json
       ruby_llm
 
 GEM
@@ -99,6 +105,7 @@ PLATFORMS
 DEPENDENCIES
   descartes!
   irb
+  llm_json!
   rake (~> 13.0)
   rspec (~> 3.0)
   rubocop (~> 1.21)
@@ -119,6 +126,7 @@ CHECKSUMS
   json-schema (6.2.0) sha256=e8bff46ed845a22c1ab2bd0d7eccf831c01fe23bb3920caa4c74db4306813666
   language_server-protocol (3.17.0.5) sha256=fd1e39a51a28bf3eec959379985a72e296e9f9acfce46f6a79d31ca8760803cc
   lint_roller (1.1.0) sha256=2c0c845b632a7d172cb849cc90c1bce937a28c5c8ccccb50dfd46a485003cc87
+  llm_json (0.1.0)
   mcp (0.8.0) sha256=ae8bd146bb8e168852866fd26f805f52744f6326afb3211e073f78a95e0c34fb
   parallel (1.27.0) sha256=4ac151e1806b755fb4e2dc2332cbf0e54f2e24ba821ff2d3dcf86bf6dc4ae130
   parser (3.3.10.2) sha256=6f60c84aa4bdcedb6d1a2434b738fe8a8136807b6adc8f7f53b97da9bc4e9357

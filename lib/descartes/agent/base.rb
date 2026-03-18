@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "ruby_llm"
+require "llm_json"
 require "logger"
 require_relative "message_queue"
 require_relative "working_note"
@@ -55,6 +56,8 @@ module Descartes
         turns = 0
         actual_max_turns = run_max_turns || @max_turns
 
+        api_failed_count = 0
+
         loop do
           turns += 1
           if turns > actual_max_turns
@@ -85,11 +88,56 @@ module Descartes
           # Call ruby_llm with full history and registered tools
           llm_tools = @tools.map(&:to_llm_schema)
 
-          response = @llm.call_with_system(
-            system_prompt: dynamic_system_prompt,
-            conversation_history: queue.to_llm_payload,
-            tools: llm_tools
-          )
+          begin
+            response = @llm.call_with_system(
+              system_prompt: dynamic_system_prompt,
+              conversation_history: queue.to_llm_payload,
+              tools: llm_tools
+            )
+            api_failed_count = 0 # reset on success
+          rescue defined?(RubyLLM::APIError) ? RubyLLM::APIError : StandardError, StandardError => e
+            # Catch RubyLLM::APIError, or standard errors if network timeout
+            api_failed_count += 1
+            status = e.respond_to?(:status) && e.status ? e.status : 500
+
+            # 401, 403, 404: Fatal Exit
+            if [401, 403, 404].include?(status)
+              @logger.error "[Descartes::Agent::#{@name}] Fatal API Error #{status}: #{e.message}. Halting job."
+              return "Error: Fatal LLM API Failure (#{status}) - #{e.message}"
+            end
+
+            # 400: Context Eviction
+            if status == 400
+              if api_failed_count <= 2
+                @logger.warn "[Descartes::Agent::#{@name}] Turn #{turns} - HTTP 400 (Bad Request). Popping last message from context and retrying."
+                queue.pop_last_message!
+              else
+                @logger.warn "[Descartes::Agent::#{@name}] Turn #{turns} - HTTP 400 persists. Popping whole tool group."
+                queue.pop_last_tool_group! || queue.pop_last_message!
+              end
+              turns -= 1
+              next
+            end
+
+            # 429, 5xx, or Timeout: Exponential Backoff
+            if status == 429 || status >= 500 || e.class.name.include?("Timeout") || e.class.name.include?("SystemCallError")
+              if api_failed_count > 3
+                @logger.error "[Descartes::Agent::#{@name}] Max API retries reached for status #{status}. Failing job."
+                return "Error: LLM API Failure - #{e.message}"
+              end
+
+              base_sleep = status == 429 ? 10 : 2
+              sleep_time = base_sleep * (2**(api_failed_count - 1))
+              @logger.warn "[Descartes::Agent::#{@name}] API Error (#{status}): #{e.message}, retrying in #{sleep_time}s..."
+              sleep(sleep_time)
+              turns -= 1
+              next
+            end
+
+            # Catch-all for other unhandled statuses
+            @logger.error "[Descartes::Agent::#{@name}] Unhandled API Error (#{status}): #{e.message}. Failing job."
+            return "Error: Unhandled LLM API Failure - #{e.message}"
+          end
 
           # Add Assistant's response to history ONLY if it actually contains text or tools.
           # Perfectly blank hallucinations (no text, no tool) cause downstream OpenAI 400 errors.
@@ -171,7 +219,7 @@ module Descartes
         end
 
         begin
-          args_hash = JSON.parse(args_json)
+          args_hash = LLMJSON.parse(args_json || "{}")
           tool_instance = tool_class.new(context, working_note)
           tool_instance.execute(args_hash)
         rescue StandardError => e
