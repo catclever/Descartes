@@ -119,6 +119,7 @@ module Descartes
 
               # Auto-context writing: write AI yield output to Soul Context
               soul.context.set(j.name, result)
+              j.instance_variable_set(:@status, :completed)
             else
               # Execute Ruby block
               j.execute_ruby!(soul.context)

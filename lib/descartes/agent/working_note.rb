@@ -37,20 +37,6 @@ module Descartes
 
         File.write(file_path, JSON.pretty_generate(@notes))
       end
-
-      # Import the working notes from a JSON file
-      # This will merge the imported notes with the existing ones
-      def import_from_file(file_path)
-        return false unless File.exist?(file_path)
-
-        data = JSON.parse(File.read(file_path))
-        data.each do |k, v|
-          @notes[k.to_sym] = v
-        end
-        true
-      rescue JSON::ParserError
-        false
-      end
     end
   end
 end
