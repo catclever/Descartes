@@ -14,7 +14,7 @@ module Descartes
       attr_reader :name, :system_prompt, :llm
 
       def initialize(name:, profile_name: "openai", system_prompt: nil, tools: [], logger: nil, max_turns: 30,
-                     timeout: nil)
+                     timeout: nil, max_tokens: nil)
         @name = name.to_sym
         @system_prompt = system_prompt || "You are a helpful AI assistant. You must use tools to submit your result."
         @max_turns = max_turns
@@ -38,7 +38,9 @@ module Descartes
         end
 
         # Initialize ruby_llm instance using profile name
-        @llm = RubyLLM::LLMService.new(profile_name: profile_name, timeout: timeout, logger: @logger)
+        llm_options = { profile_name: profile_name, timeout: timeout, logger: @logger }
+        llm_options[:max_tokens] = max_tokens if max_tokens
+        @llm = RubyLLM::LLMService.new(**llm_options)
       end
 
       # The execution loop given a job context

@@ -57,12 +57,14 @@ module Descartes
       actual_ruby_llm_profile = mapped_profile[:provider] || profile_name
 
       timeout_val = kwargs.delete(:timeout) || mapped_profile[:timeout]
+      max_tokens_val = kwargs.delete(:max_tokens) || mapped_profile[:max_tokens]
 
       @agents[name.to_sym] = Agent::Base.new(
         name: name,
         logger: @logger,
         profile_name: actual_ruby_llm_profile,
         timeout: timeout_val,
+        max_tokens: max_tokens_val,
         **kwargs
       )
     end
