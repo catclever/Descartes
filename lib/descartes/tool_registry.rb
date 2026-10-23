@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "tools/base_tool"
+require_relative "tools/dynamic_remote_tool"
 
 module Descartes
   class ToolRegistry
