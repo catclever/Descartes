@@ -27,7 +27,7 @@ module Descartes
       end
 
       listeners_to_call.each do |block|
-        if block.arity == 0
+        if block.arity.zero?
           block.call
         elsif block.arity == 1
           block.call(payload)
