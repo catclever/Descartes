@@ -1,12 +1,11 @@
 # frozen_string_literal: true
 
-require 'json'
-require_relative '../agent/base'
-require_relative '../context'
-require_relative '../tool_registry'
-require_relative 'protocol'
-require 'logger'
-require 'thread'
+require "json"
+require_relative "../agent/base"
+require_relative "../context"
+require_relative "../tool_registry"
+require_relative "protocol"
+require "logger"
 
 module Descartes
   module Hub
@@ -27,9 +26,9 @@ module Descartes
         payload = Protocol.parse(raw_msg)
 
         case payload[:type]
-        when 'init'
+        when "init"
           handle_init(payload)
-        when 'tool_result'
+        when "tool_result"
           handle_tool_result(payload)
         else
           @logger.warn "[Session #{@session_id}] Ignored message type: #{payload[:type]}"
@@ -41,11 +40,12 @@ module Descartes
 
       def terminate!
         @mutex.synchronize do
-          return if [:finished, :aborted].include?(@state)
+          return if %i[finished aborted].include?(@state)
+
           @state = :aborted
         end
 
-        if @thread && @thread.alive?
+        if @thread&.alive?
           @thread.kill
           @thread.join(1) # wait for thread to actually die
         end
@@ -65,6 +65,7 @@ module Descartes
       def handle_init(payload)
         @mutex.synchronize do
           raise "Session already initialized" unless @state == :created
+
           @state = :running
         end
 
@@ -91,28 +92,26 @@ module Descartes
         )
 
         @thread = Thread.new do
-          begin
-            result = @agent.execute(context, prompt)
+          result = @agent.execute(context, prompt)
 
-            @mutex.synchronize do
-              @state = :finished
-            end
-
-            # Send finished msg
-            finished_msg = Protocol.build(:finished, result: result, status: "ok")
-            @logger.info "[Session #{@session_id}] Hub Message Out: #{finished_msg}"
-
-            @logger.info "[Session #{@session_id}] Finished successfully."
-          rescue StandardError => e
-            @mutex.synchronize do
-              @state = :aborted
-            end
-            error_msg = Protocol.build(:error, message: e.message)
-            @logger.info "[Session #{@session_id}] Hub Message Out: #{error_msg}"
-
-            @logger.error "[Session #{@session_id}] Error in worker thread: #{e.message}"
-            @logger.error e.backtrace.join("\n")
+          @mutex.synchronize do
+            @state = :finished
           end
+
+          # Send finished msg
+          finished_msg = Protocol.build(:finished, result: result, status: "ok")
+          @logger.info "[Session #{@session_id}] Hub Message Out: #{finished_msg}"
+
+          @logger.info "[Session #{@session_id}] Finished successfully."
+        rescue StandardError => e
+          @mutex.synchronize do
+            @state = :aborted
+          end
+          error_msg = Protocol.build(:error, message: e.message)
+          @logger.info "[Session #{@session_id}] Hub Message Out: #{error_msg}"
+
+          @logger.error "[Session #{@session_id}] Error in worker thread: #{e.message}"
+          @logger.error e.backtrace.join("\n")
         end
       end
 
@@ -139,7 +138,7 @@ module Descartes
             logger.info "[Session #{session_id}] Executing remote tool: #{self.class.tool_name}"
 
             # Send execute_tool message
-            call_id = "call_#{rand(1000000)}"
+            call_id = "call_#{rand(1_000_000)}"
             execute_msg = Protocol.build(:execute_tool, call_id: call_id, tool: self.class.tool_name, arguments: args)
             logger.info "[Session #{session_id}] Hub Message Out: #{execute_msg}"
 
@@ -147,14 +146,12 @@ module Descartes
 
             begin
               loop do
-                 msg = queue.pop
-                 if msg[:type] == 'tool_result' && msg[:call_id] == call_id
-                   return msg[:output]
-                 else
-                   # Put it back if it's not ours (unlikely in single thread but good practice)
-                   # In a real system you'd probably handle this better
-                   queue.push(msg) unless msg[:type] == 'tool_result'
-                 end
+                msg = queue.pop
+                return msg[:output] if msg[:type] == "tool_result" && msg[:call_id] == call_id
+
+                # Put it back if it's not ours (unlikely in single thread but good practice)
+                # In a real system you'd probably handle this better
+                queue.push(msg) unless msg[:type] == "tool_result"
               end
             ensure
               session.set_state(:running)
