@@ -101,7 +101,7 @@ module Descartes
       # Pops the very last message from history (except system prompts)
       def pop_last_message!
         return nil if @history.size <= 1
-        return nil if @history.last[:role] == 'system'
+        return nil if @history.last[:role] == "system"
 
         popped = @history.pop
         @logger.warn "[Descartes::MessageQueue] Context Eviction (pop_last_message): Removed last message with role '#{popped[:role]}'."
@@ -114,13 +114,13 @@ module Descartes
 
         # Start scanning from the end
         idx = @history.size - 1
-        
+
         # We might be ending on a tool or an assistant message
         # Let's find the outermost assistant message that has tool calls
         target_assistant_idx = nil
         while idx >= 0
           msg = @history[idx]
-          if msg[:role] == 'assistant' && msg[:tool_calls] && !msg[:tool_calls].empty?
+          if msg[:role] == "assistant" && msg[:tool_calls] && !msg[:tool_calls].empty?
             target_assistant_idx = idx
             break
           end

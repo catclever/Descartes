@@ -27,21 +27,17 @@ module Descartes
       end
 
       listeners_to_call.each do |block|
-        begin
-          if block.arity == 0
-            block.call
-          elsif block.arity == 1
-            block.call(payload)
-          else
-            block.call(event, payload)
-          end
-        rescue StandardError => e
-          # Optionally log the error, but we shouldn't crash the emission loop
-          # unless it's a specific requirement. For now we rescue and ignore or log if logger available
-          if defined?(@logger) && @logger
-            @logger.error "[EventEmitter] Error in callback for event #{event}: #{e.message}"
-          end
+        if block.arity == 0
+          block.call
+        elsif block.arity == 1
+          block.call(payload)
+        else
+          block.call(event, payload)
         end
+      rescue StandardError => e
+        # Optionally log the error, but we shouldn't crash the emission loop
+        # unless it's a specific requirement. For now we rescue and ignore or log if logger available
+        @logger.error "[EventEmitter] Error in callback for event #{event}: #{e.message}" if defined?(@logger) && @logger
       end
     end
 

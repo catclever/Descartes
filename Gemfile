@@ -6,11 +6,11 @@ source "https://rubygems.org"
 gemspec
 
 if ENV["CI"]
-  gem "ruby_llm", github: "catclever/ruby_llm"
   gem "llm_json", github: "catclever/llm_json"
+  gem "ruby_llm", github: "catclever/ruby_llm"
 else
-  gem "ruby_llm", path: "../ruby_llm"
   gem "llm_json", path: "../llm_json"
+  gem "ruby_llm", path: "../ruby_llm"
 end
 
 gem "irb"

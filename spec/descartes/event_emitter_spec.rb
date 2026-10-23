@@ -41,7 +41,7 @@ RSpec.describe Descartes::EventEmitter do
 
     it "calls catch-all (:all) listeners for any event" do
       called_events = []
-      emitter.on(:all) do |event, payload|
+      emitter.on(:all) do |event, _payload|
         called_events << event
       end
 
@@ -60,10 +60,10 @@ RSpec.describe Descartes::EventEmitter do
       emitter.emit(:arity_test, "hello")
 
       expect(results).to eq([
-        :no_args,
-        "hello",
-        [:arity_test, "hello"]
-      ])
+                              :no_args,
+                              "hello",
+                              [:arity_test, "hello"]
+                            ])
     end
 
     it "rescues errors in callbacks without breaking emission" do
@@ -177,7 +177,7 @@ RSpec.describe Descartes::Agent::Base do
 
       # Mock the status method on the error
       error_class = Class.new(StandardError) do
-        def status; 401; end
+        def status = 401
       end
       allow(agent.llm).to receive(:call_with_system).and_raise(error_class.new("Unauthorized"))
 

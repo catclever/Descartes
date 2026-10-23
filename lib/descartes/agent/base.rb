@@ -156,9 +156,7 @@ module Descartes
           has_content = response.content && !response.content.strip.empty?
           queue.add({ role: "assistant", content: response.content || "", tool_calls: response.tool_calls }) if has_content || response.has_tool_calls?
 
-          if has_content
-            emit(:thought, response.content)
-          end
+          emit(:thought, response.content) if has_content
 
           # If the LLM didn't call any tools, we warn it and force it to.
           unless response.has_tool_calls?
@@ -210,11 +208,11 @@ module Descartes
                       })
           end
 
-          if job_finished
-            @logger.info "[Descartes::Agent::#{@name}] Finished execution via explicit submission."
-            emit(:finished, final_result)
-            return final_result
-          end
+          next unless job_finished
+
+          @logger.info "[Descartes::Agent::#{@name}] Finished execution via explicit submission."
+          emit(:finished, final_result)
+          return final_result
         end
       end
 
