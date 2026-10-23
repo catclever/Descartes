@@ -89,7 +89,7 @@ module Descartes
 
         # Build RemoteTools
         remote_tools = tools.map do |tool_schema|
-          build_remote_tool_class(tool_schema).new(context)
+          build_remote_tool_class(tool_schema)
         end
 
         @agent = Descartes::Agent::Base.new(

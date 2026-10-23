@@ -23,7 +23,7 @@ EM.run do
       task_name: "math_calculator",
       prompt: "Please calculate the sum of 123 and 456 using your calculator tool.",
       system_prompt: "You are a helpful math assistant. You must use tools to perform calculations and submit your answer.",
-      llm_profile: "glm",
+      llm_profile: "kimi",
       tools: [
         {
           name: "add_numbers",
