@@ -5,7 +5,7 @@ source "https://rubygems.org"
 # Specify your gem's dependencies in descartes.gemspec
 gemspec
 
-if ENV["CI"]
+if ENV["CI"] || !Dir.exist?(File.expand_path("../llm_json", __dir__))
   gem "llm_json", github: "catclever/llm_json"
   gem "ruby_llm", github: "catclever/ruby_llm"
 else
