@@ -9,13 +9,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libyaml-dev \
     && rm -rf /var/lib/apt/lists/*
 
-COPY Gemfile Gemfile.lock descartes.gemspec ./
-COPY lib/descartes/version.rb ./lib/descartes/version.rb
+COPY . .
 
 # Install dependencies (llm_json and ruby_llm will be fetched from GitHub if not local)
 RUN bundle install
-
-COPY . .
 
 EXPOSE 8089
 
