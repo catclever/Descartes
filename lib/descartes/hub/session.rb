@@ -10,9 +10,10 @@ require "logger"
 module Descartes
   module Hub
     class Session
-      attr_reader :state, :thread, :session_id
+      attr_reader :state, :thread, :session_id, :channel
 
-      def initialize(logger: nil)
+      def initialize(channel: nil, logger: nil)
+        @channel = channel
         @state = :created
         @session_id = object_id.to_s
         @logger = logger || Logger.new($stdout, level: Logger::INFO)
@@ -20,6 +21,14 @@ module Descartes
         @mutex = Mutex.new
         @thread = nil
         @agent = nil
+      end
+
+      def send_message(payload)
+        return unless @channel.respond_to?(:send)
+
+        @channel.send(payload)
+      rescue StandardError => e
+        @logger.error "[Session #{@session_id}] Failed to send message to channel: #{e.message}"
       end
 
       def handle_message(raw_msg)
@@ -91,6 +100,20 @@ module Descartes
           logger: @logger
         )
 
+        if @agent.respond_to?(:on)
+          @agent.on(:thought) do |text|
+            send_message(Protocol.build(:stream_event, event: "thought", data: text))
+          end
+
+          @agent.on(:tool_call_start) do |data|
+            send_message(Protocol.build(:stream_event, event: "tool_call_start", data: data))
+          end
+
+          @agent.on(:tool_call_end) do |data|
+            send_message(Protocol.build(:stream_event, event: "tool_call_end", data: data))
+          end
+        end
+
         @thread = Thread.new do
           result = @agent.execute(context, prompt)
 
@@ -101,6 +124,7 @@ module Descartes
           # Send finished msg
           finished_msg = Protocol.build(:finished, result: result, status: "ok")
           @logger.info "[Session #{@session_id}] Hub Message Out: #{finished_msg}"
+          send_message(finished_msg)
 
           @logger.info "[Session #{@session_id}] Finished successfully."
         rescue StandardError => e
@@ -109,6 +133,7 @@ module Descartes
           end
           error_msg = Protocol.build(:error, message: e.message)
           @logger.info "[Session #{@session_id}] Hub Message Out: #{error_msg}"
+          send_message(error_msg)
 
           @logger.error "[Session #{@session_id}] Error in worker thread: #{e.message}"
           @logger.error e.backtrace.join("\n")
@@ -141,16 +166,17 @@ module Descartes
             call_id = "call_#{rand(1_000_000)}"
             execute_msg = Protocol.build(:execute_tool, call_id: call_id, tool: self.class.tool_name, arguments: args)
             logger.info "[Session #{session_id}] Hub Message Out: #{execute_msg}"
+            session.send_message(execute_msg)
 
             session.set_state(:waiting_tool)
 
             begin
               loop do
-                msg = queue.pop
+                msg = queue.pop(timeout: 120)
+                return "Error: Remote tool execution timed out after 120s" if msg.nil?
                 return msg[:output] if msg[:type] == "tool_result" && msg[:call_id] == call_id
 
                 # Put it back if it's not ours (unlikely in single thread but good practice)
-                # In a real system you'd probably handle this better
                 queue.push(msg) unless msg[:type] == "tool_result"
               end
             ensure

@@ -1,10 +1,14 @@
 # frozen_string_literal: true
 
 require_relative "descartes/version"
+require_relative "descartes/event_emitter"
 require_relative "descartes/body"
 require_relative "descartes/soul"
 require_relative "descartes/sandbox/executor"
 require_relative "descartes/tool_registry"
+require_relative "descartes/tools/dynamic_remote_tool"
+require_relative "descartes/hub/protocol"
+require_relative "descartes/hub/session"
 
 # Pre-load all tools in the standard directory structure
 Descartes::ToolRegistry.load_all!

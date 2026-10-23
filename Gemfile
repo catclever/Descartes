@@ -13,6 +13,11 @@ else
   gem "ruby_llm", path: "../ruby_llm"
 end
 
+gem "rack"
+gem "puma"
+gem "faye-websocket"
+gem "eventmachine"
+
 gem "irb"
 gem "rake", "~> 13.0"
 
