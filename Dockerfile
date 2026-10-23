@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     git \
     curl \
+    libyaml-dev \
     && rm -rf /var/lib/apt/lists/*
 
 COPY Gemfile Gemfile.lock descartes.gemspec ./
