@@ -7,10 +7,12 @@ require_relative "message_queue"
 require_relative "working_note"
 require_relative "token_monitor"
 require_relative "../tool_registry"
+require_relative "../event_emitter"
 
 module Descartes
   module Agent
     class Base
+      include Descartes::EventEmitter
       attr_reader :name, :system_prompt, :llm
 
       def initialize(name:, profile_name: "openai", system_prompt: nil, tools: [], logger: nil, max_turns: 30,
@@ -63,8 +65,10 @@ module Descartes
         loop do
           turns += 1
           if turns > actual_max_turns
+            error_msg = "Error: Agent exceeded maximum allowed reasoning turns."
             @logger.warn "[Descartes::Agent::#{@name}] Exceeded max turns (#{actual_max_turns}). Forcing exit."
-            return "Error: Agent exceeded maximum allowed reasoning turns."
+            emit(:error, error_msg)
+            return error_msg
           end
 
           # Stage 1 Eviction Warning (Heartbeat Check)
@@ -104,8 +108,10 @@ module Descartes
 
             # 401, 403, 404: Fatal Exit
             if [401, 403, 404].include?(status)
+              error_msg = "Error: Fatal LLM API Failure (#{status}) - #{e.message}"
               @logger.error "[Descartes::Agent::#{@name}] Fatal API Error #{status}: #{e.message}. Halting job."
-              return "Error: Fatal LLM API Failure (#{status}) - #{e.message}"
+              emit(:error, error_msg)
+              return error_msg
             end
 
             # 400: Context Eviction
@@ -124,8 +130,10 @@ module Descartes
             # 429, 5xx, or Timeout: Exponential Backoff
             if status == 429 || status >= 500 || e.class.name.include?("Timeout") || e.class.name.include?("SystemCallError")
               if api_failed_count > 3
+                error_msg = "Error: LLM API Failure - #{e.message}"
                 @logger.error "[Descartes::Agent::#{@name}] Max API retries reached for status #{status}. Failing job."
-                return "Error: LLM API Failure - #{e.message}"
+                emit(:error, error_msg)
+                return error_msg
               end
 
               base_sleep = status == 429 ? 10 : 2
@@ -137,13 +145,20 @@ module Descartes
             end
 
             # Catch-all for other unhandled statuses
+            error_msg = "Error: Unhandled LLM API Failure - #{e.message}"
             @logger.error "[Descartes::Agent::#{@name}] Unhandled API Error (#{status}): #{e.message}. Failing job."
-            return "Error: Unhandled LLM API Failure - #{e.message}"
+            emit(:error, error_msg)
+            return error_msg
           end
 
           # Add Assistant's response to history ONLY if it actually contains text or tools.
           # Perfectly blank hallucinations (no text, no tool) cause downstream OpenAI 400 errors.
-          queue.add({ role: "assistant", content: response.content || "", tool_calls: response.tool_calls }) if (response.content && !response.content.strip.empty?) || response.has_tool_calls?
+          has_content = response.content && !response.content.strip.empty?
+          queue.add({ role: "assistant", content: response.content || "", tool_calls: response.tool_calls }) if has_content || response.has_tool_calls?
+
+          if has_content
+            emit(:thought, response.content)
+          end
 
           # If the LLM didn't call any tools, we warn it and force it to.
           unless response.has_tool_calls?
@@ -174,7 +189,11 @@ module Descartes
             # Lookup the tool class to check if it yields control
             tool_class = @tools.find { |t| t.tool_name == tool_name }
 
+            emit(:tool_call_start, { tool: tool_name, arguments: tool_args_json })
+
             tool_result = execute_tool(tool_name, tool_args_json, context, working_note)
+
+            emit(:tool_call_end, { tool: tool_name, result: tool_result })
 
             # If the LLM used an Explicit Yield tool, flag loop for exit
             if tool_class&.yields_control?
@@ -193,6 +212,7 @@ module Descartes
 
           if job_finished
             @logger.info "[Descartes::Agent::#{@name}] Finished execution via explicit submission."
+            emit(:finished, final_result)
             return final_result
           end
         end

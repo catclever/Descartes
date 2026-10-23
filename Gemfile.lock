@@ -1,10 +1,12 @@
-PATH
-  remote: ../llm_json
+GIT
+  remote: https://github.com/catclever/llm_json.git
+  revision: 8ca3c0ee1b952ea369080125bdc7808916a83d96
   specs:
     llm_json (0.1.0)
 
-PATH
-  remote: ../ruby_llm
+GIT
+  remote: https://github.com/catclever/ruby_llm.git
+  revision: dad2020e7e0ad67f8084755bdf7a16f1c9d4404a
   specs:
     ruby_llm (0.1.0)
       dotenv (~> 3.1)
