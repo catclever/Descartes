@@ -5,10 +5,12 @@ require "eventmachine"
 require "json"
 
 url = ARGV[0] || "ws://localhost:8080/"
+profile = ARGV[1]
 
 puts "======================================================"
 puts "  Descartes Hub E2E Test Client"
 puts "  Target URL: #{url}"
+puts "  LLM Profile: #{profile ? profile : '(Default from Hub ENV/Config)'}"
 puts "======================================================"
 
 EM.run do
@@ -23,7 +25,6 @@ EM.run do
       task_name: "math_calculator",
       prompt: "Please calculate the sum of 123 and 456 using your calculator tool.",
       system_prompt: "You are a helpful math assistant. You must use tools to perform calculations and submit your answer.",
-      llm_profile: "kimi",
       tools: [
         {
           name: "add_numbers",
@@ -39,6 +40,7 @@ EM.run do
         }
       ]
     }
+    init_payload[:llm_profile] = profile if profile && !profile.strip.empty?
 
     ws.send(init_payload.to_json)
   end

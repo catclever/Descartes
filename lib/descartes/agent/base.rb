@@ -15,7 +15,7 @@ module Descartes
       include Descartes::EventEmitter
       attr_reader :name, :system_prompt, :llm
 
-      def initialize(name:, profile_name: "openai", system_prompt: nil, tools: [], logger: nil, max_turns: 30,
+      def initialize(name:, profile_name: nil, system_prompt: nil, tools: [], logger: nil, max_turns: 30,
                      timeout: nil, max_tokens: nil)
         @name = name.to_sym
         @system_prompt = system_prompt || "You are a helpful AI assistant. You must use tools to submit your result."
@@ -39,8 +39,17 @@ module Descartes
           @tools << dt unless @tools.include?(dt)
         end
 
+        env_default = ENV["DEFAULT_LLM_PROFILE"]&.strip
+        effective_profile = if profile_name && !profile_name.to_s.strip.empty?
+                              profile_name.to_s.strip
+                            elsif env_default && !env_default.empty?
+                              env_default
+                            else
+                              "default"
+                            end
+
         # Initialize ruby_llm instance using profile name
-        llm_options = { profile_name: profile_name, timeout: timeout, logger: @logger }
+        llm_options = { profile_name: effective_profile, timeout: timeout, logger: @logger }
         llm_options[:max_tokens] = max_tokens if max_tokens
         @llm = RubyLLM::LLMService.new(**llm_options)
       end

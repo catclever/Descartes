@@ -81,7 +81,15 @@ module Descartes
         task_name = payload[:task_name]
         prompt = payload[:prompt]
         system_prompt = payload[:system_prompt]
-        llm_profile = payload[:llm_profile] || "openai"
+        profile_candidate = payload[:llm_profile]&.to_s&.strip
+        env_default = ENV["DEFAULT_LLM_PROFILE"]&.strip
+        llm_profile = if profile_candidate && !profile_candidate.empty?
+                        profile_candidate
+                      elsif env_default && !env_default.empty?
+                        env_default
+                      else
+                        "default"
+                      end
         tools = payload[:tools] || []
 
         # Initialize context

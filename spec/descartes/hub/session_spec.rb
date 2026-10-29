@@ -47,6 +47,48 @@ RSpec.describe Descartes::Hub::Session do
         session.thread.join
         expect(session.state).to eq(:finished)
       end
+
+      it "uses ENV['DEFAULT_LLM_PROFILE'] when llm_profile is omitted in init" do
+        agent_double = instance_double("Descartes::Agent::Base")
+        expect(Descartes::Agent::Base).to receive(:new)
+          .with(hash_including(profile_name: "kimi"))
+          .and_return(agent_double)
+        allow(agent_double).to receive(:execute).and_return("done")
+
+        allow(ENV).to receive(:[]).and_call_original
+        allow(ENV).to receive(:[]).with("DEFAULT_LLM_PROFILE").and_return("kimi")
+
+        msg_without_profile = {
+          type: "init",
+          task_name: "test_task",
+          prompt: "Say hello",
+          tools: []
+        }.to_json
+
+        session.handle_message(msg_without_profile)
+        session.thread.join
+      end
+
+      it "falls back to 'default' when llm_profile is omitted and no ENV is set" do
+        agent_double = instance_double("Descartes::Agent::Base")
+        expect(Descartes::Agent::Base).to receive(:new)
+          .with(hash_including(profile_name: "default"))
+          .and_return(agent_double)
+        allow(agent_double).to receive(:execute).and_return("done")
+
+        allow(ENV).to receive(:[]).and_call_original
+        allow(ENV).to receive(:[]).with("DEFAULT_LLM_PROFILE").and_return(nil)
+
+        msg_without_profile = {
+          type: "init",
+          task_name: "test_task",
+          prompt: "Say hello",
+          tools: []
+        }.to_json
+
+        session.handle_message(msg_without_profile)
+        session.thread.join
+      end
     end
 
     context "when handling tool_result message" do
