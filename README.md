@@ -46,18 +46,24 @@ In traditional agent architectures, placing private credentials, production data
 +-------------------------------------------------------------------------+
 ```
 
-### 2. 🔌 Dynamic Remote Tool Proxy (`DynamicRemoteTool`)
+### 2. 🎯 Task-Driven Dynamic Toolsets (On-Demand Composition)
+Unlike traditional agent frameworks where every tool is statically pre-loaded on the server, Descartes Hub enables clients to **dynamically supply only the relevant toolset per task** during the `init` handshake:
+- **Minimalist Context & Lower Token Costs**: The LLM prompt is never cluttered with hundreds of irrelevant tool schemas, significantly reducing prompt token consumption.
+- **Eliminates Hallucinations & Improves Accuracy**: By scoping the model's action space to only the tools relevant to the current objective, LLM tool selection precision increases dramatically.
+- **Ephemeral & Heterogeneous Personas**: Different clients or jobs can assemble specialized personas on the fly (e.g., SQL audit tasks supply only read-only database tools; refactoring jobs supply only Git/file tools). The cloud Hub remains a clean, stateless reasoning core without needing backend restarts or deployments.
+
+### 3. 🔌 Dynamic Remote Tool Proxy (`DynamicRemoteTool`)
 When a client connects and sends tool definitions (standard JSON Schema), the Hub dynamically creates native `Descartes::Tool::Base` subclasses:
 - **Thread-Safe Synchronization**: Uses a thread-safe Queue to suspend the agent loop when a tool call is dispatched and immediately resumes when the client returns the tool output.
 - **Timeout Protection**: Safeguards against client disconnections or hung processes with configurable timeouts.
 
-### 3. 📡 Full Real-Time Lifecycle Streaming (`EventEmitter`)
+### 4. 📡 Full Real-Time Lifecycle Streaming (`EventEmitter`)
 Built-in pub/sub event hooks give you complete visibility into the agent's execution:
 - `:thought`: Real-time streaming thoughts and reasoning text from the LLM.
 - `:tool_call_start` & `:tool_call_end`: Dispatched tool arguments and completed tool results.
 - `:finished` & `:error`: Agent task resolution or unrecoverable error events.
 
-### 4. 🧠 Autonomous Agent Foundation (`Descartes::Agent::Base`)
+### 5. 🧠 Autonomous Agent Foundation (`Descartes::Agent::Base`)
 Descartes is also a complete standalone agent framework:
 - **Sliding-Window Message Queue**: Automatically compacts and summarizes conversation history to avoid exceeding token limits.
 - **Token Monitor**: Precisely tracks token consumption and iteration turns.
