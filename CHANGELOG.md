@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-10-29
+
+### 📦 Decoupling & Architecture Refinement
+- **Extracted Descartes Hub**: Decoupled the distributed WebSocket Hub server (`Descartes::Hub::Server`, `Session`, `Protocol`, Puma CLI, Dockerfile, and Compose stack) into a dedicated companion repository and gem `descartes-hub`.
+- **Pure Lightweight Agent SDK**: Removed `puma`, `faye-websocket`, `rack`, and `eventmachine` dependencies from `descartes.gemspec` and `Gemfile`, keeping `descartes` strictly focused on agent loop logic, tool proxying (`DynamicRemoteTool`), and pub/sub event streaming (`EventEmitter`).
+
 ## [0.2.0] - 2026-10-29
 
 ### 🚀 Major Feature: Descartes Hub (Distributed Agent Architecture)
